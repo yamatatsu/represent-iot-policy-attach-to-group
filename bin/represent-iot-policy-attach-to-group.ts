@@ -1,21 +1,27 @@
-#!/usr/bin/env node
-import 'source-map-support/register';
-import * as cdk from 'aws-cdk-lib';
-import { RepresentIotPolicyAttachToGroupStack } from '../lib/represent-iot-policy-attach-to-group-stack';
+import { Construct } from "constructs";
+import * as cdk from "aws-cdk-lib";
+import * as aws_iot from "aws-cdk-lib/aws-iot";
 
 const app = new cdk.App();
-new RepresentIotPolicyAttachToGroupStack(app, 'RepresentIotPolicyAttachToGroupStack', {
-  /* If you don't specify 'env', this stack will be environment-agnostic.
-   * Account/Region-dependent features and context lookups will not work,
-   * but a single synthesized template can be deployed anywhere. */
+const stack = new cdk.Stack(app, "represent-iot-policy-attach-to-group");
 
-  /* Uncomment the next line to specialize this stack for the AWS Account
-   * and Region that are implied by the current CLI configuration. */
-  // env: { account: process.env.CDK_DEFAULT_ACCOUNT, region: process.env.CDK_DEFAULT_REGION },
+const group = new aws_iot.CfnThingGroup(stack, "Group");
 
-  /* Uncomment the next line if you know exactly what Account and Region you
-   * want to deploy the stack to. */
-  // env: { account: '123456789012', region: 'us-east-1' },
+const policy = new aws_iot.CfnPolicy(stack, "Policy", {
+  policyName: "represent-iot-policy",
+  policyDocument: {
+    Version: "2012-10-17",
+    Statement: [
+      {
+        Effect: "Allow",
+        Action: ["iot:Publish"],
+        Resource: ["*"],
+      },
+    ],
+  },
+});
 
-  /* For more information, see https://docs.aws.amazon.com/cdk/latest/guide/environments.html */
+new aws_iot.CfnPolicyPrincipalAttachment(stack, "PolicyAttachment", {
+  policyName: policy.policyName!,
+  principal: group.attrArn,
 });
